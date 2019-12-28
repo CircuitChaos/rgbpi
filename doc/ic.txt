@@ -1,0 +1,21 @@
+ATtiny13
+
+1. pb5 pci5/~rst/adc0/dw		<- rst
+2. pb3 pci3/clki/adc3			<- gc
+3. pb4 pci4/adc2			<- gd
+4. gnd					-- gnd
+
+5. pb0 pci0/mosi/ain0/oc0a		-> green
+6. pb1 pci1/miso/ain1/oc0b/int0		-> red
+7. pb2 pci2/ack/adc1/t0			-> blue
+8. vcc					<- vcc
+
+pb7	-	pu	p1	d0
+pb6	-	pu	p1	d0
+pb5	rst	pu	p1	d0
+pb4	gd	pu	p1	d0
+pb3	gc	pu	p1	d0
+pb2	blue	lo	p0	d1
+pb1	green	lo	p0	d1
+pb0	red	lo	p0	d1
+			f8	07

@@ -1,0 +1,51 @@
+# \brief	SCons include file for AVRs
+# \author	Circuit Chaos
+# \date		2017-11-18
+#
+# Building for AVR includes these steps:
+#
+# Make all local objects (various subdirectories possible)
+# Link all objects to .out file
+# Create .bin file from .out file
+# Create .hex file from .out file
+# Create .lst file from .out file
+
+import os
+
+NAME	= ARGUMENTS.get('NAME')
+MCU	= ARGUMENTS.get('MCU')
+FREQ	= ARGUMENTS.get('FREQ')
+ADDCF	= ARGUMENTS.get('ADDCFLAGS')
+ADDXF	= ARGUMENTS.get('ADDCXXFLAGS')
+ADDLF	= ARGUMENTS.get('ADDLDFLAGS')
+
+CFLAGS	= '-Wall -Wextra -Os -pipe -mmcu=' + MCU + ' -mcall-prologues --short-enums -DF_CPU=' + FREQ + 'L'
+
+env	= Environment(
+	CPPPATH		= [ 'src' ],
+	CC		= 'avr-gcc',
+	CXX		= 'avr-g++',
+	LINK		= 'avr-g++',
+	OBJCOPY		= 'avr-objcopy',
+	OBJDUMP		= 'avr-objdump',
+	NM		= 'avr-nm',
+	CFLAGS		= CFLAGS + ' ' + ADDCF,
+	CXXFLAGS	= CFLAGS + ' ' + ADDXF,
+	LINKFLAGS	= CFLAGS + ' ' + ADDLF,
+	PROGSUFFIX	= '.out',
+	OBJSUFFIX	= '.o',
+)
+
+def avr_build(env, target, source):
+	prog	= env.Program(target + '.out', source)
+	bin	= env.AddPostAction(prog, env['OBJCOPY'] + ' -j .text -j .data -O binary build/' + NAME + '.out build/' + NAME + '.bin')
+	hex	= env.AddPostAction(prog, env['OBJCOPY'] + ' -j .text -j .data -O ihex build/' + NAME + '.out build/' + NAME + '.hex')
+	lst1	= env.AddPostAction(prog, env['OBJDUMP'] + ' -h -S -D --stabs --disassemble-zeroes build/' + NAME + '.out > build/' + NAME + '.lst')
+	lst2	= env.AddPostAction(lst1, env['NM'] + ' build/' + NAME + '.out >> build/' + NAME + '.lst')
+	env.Clean(bin, 'build/' + NAME + '.bin')
+	env.Clean(hex, 'build/' + NAME + '.hex')
+	env.Clean(lst2, 'build/' + NAME + '.lst')
+	return lst2
+
+env.VariantDir('build', 'src', duplicate = 0)
+avr_build(env, 'build/' + NAME, [Glob('build/*.cpp'), Glob('build/*.c')])
