@@ -19,7 +19,7 @@ Signals are unidirectional and, in idle state, both are high. Inputs are protect
 
 ### Layer 2 (transport)
 
-Transport protocol is synchronous and information is sent during bit transitions. There are three bit types that can be sent:
+Transport protocol is synchronous and information is sent during bit transitions. Three bus events have been defined:
 
 * **Sync bit**: GD falling when GC is high (GC=H; GD=H->L)
 * **1 bit**: GD high when GC is rising (GC=L->H; GD=1)
@@ -27,7 +27,7 @@ Transport protocol is synchronous and information is sent during bit transitions
 
 There's no minimum clock frequency (it works down to DC), and maximum frequency has not been defined. Current implementation works reliably at around 20 kHz – it's high enough to quicikly transfer RGB data, and low enough to be sure that the MCU will catch up. As the protocol is unidirectional, there's no clock stretching.
 
-Sync bit resets the internal state machine and signals a new transfer. All bus states are summarized in the table below.
+Sync bit event resets the decoder and signals a new transfer. All bus events are summarized in the table below.
 
 |  GC  |  GD  | Meaning |
 |:----:|:----:| ------- |
@@ -51,7 +51,7 @@ Sync bit resets the internal state machine and signals a new transfer. All bus s
 Sync bit transfer can be achieved with these steps:
 
 * Set GD high (will be ignored regardless of GC state)
-* Set GC high (transfer bit 1)
+* Set GC high (transfer bit 1; not harmful, as bus will be reset in a while)
 * Set GD low (send sync bit)
 * Set GC low (ignored)
 
@@ -74,13 +74,13 @@ After 24 data bits are transferred, PWM controller is updated with them.
 
 ## Controller
 
-Controller is a simple application of ATtiny13, which receives RGB data on *GC* and *GD* pins, and drives three transistors with a PWM signal. There are 256 possible PWM levels and LED driving frequency is 292 Hz. It also has three LEDs on the case, one for each PWM channel, to aid in testing and troubleshooting.
+Controller is a simple application of the ATtiny13 MCU, which receives RGB data on *GC* and *GD* pins, and drives three NPN transistors with a PWM signal. There are 256 possible PWM levels and LED driving frequency is 292 Hz. Controller device also has three LEDs on the case, one for each PWM channel, to aid in testing and troubleshooting.
 
-Upon startup and before first data frame from Raspberry Pi is received, controller controls LEDs with its own algorithm, smoothly fading between two colors. This mode of operation is called *standalone*. When signal from Raspberry Pi is received, controller smoothly terminates current phase (fades out LEDs) before switching to the *controlled* mode – mode in which Raspberry Pi controls the color.
+Upon startup and before first data frame from Raspberry Pi is received, controller controls LEDs with its own algorithm, smoothly fading between two colors. This mode of operation is called *standalone*. When the first complete frame from Raspberry Pi is received, controller smoothly terminates current phase (fades out LEDs) before switching to the *controlled* mode – a mode in which Raspberry Pi controls the color.
 
 ### Firmware
 
-Firmware has been written in C++ for AVRs, using avr-gcc, in the C++98 dialect. It needs GNU Make and scons to compile. In the project directory, simply type:
+Firmware has been written in AVR C++, using avr-gcc, in the C++98 dialect. It needs *GNU Make* and *scons* to compile. In the project directory, simply type:
 
 ```make```
 
@@ -100,16 +100,16 @@ PCB is single-layer, with THT and SMD components. Its dimensions match the case 
 
 ### Case
 
-A *Z23A* case has been selected. It's produced by the Polish manufacturer, Kradex, and I'm not sure if it's available outside of Poland. Its specifications are available below:
+A *Z23A* case has been selected. It's produced by the Polish manufacturer, Kradex, and I'm not sure if it's available outside of Poland. Its specifications are available below.
 
 * [PDF file](https://www.kradex.com.pl/products/125/Z23A.pdf)
 * [Product page](https://www.kradex.com.pl/product/obudowy_kolorowe_polprzezroczyste/z23a?lang=en)
 
 ## Python software
 
-Python files reside in the *py* directory. There are two modules to be used – *simp2c.py* and *rgbpi.py* (the latter uses the former) – and two examples. One is a simple example for toggling colors, and one is a more sophisticated program that runs on the video shown below.
+Python files reside in the *py* directory. There are two modules to be used – *simp2c.py* and *rgbpi.py* (the latter uses the former) – and two examples. *example1.py* is a simple example for toggling colors, and *example2.py* is a (bit) more sophisticated program that runs on the video shown below.
 
-Controlling colors is as simple as:
+Setting the strip color is as simple as providing three RGB values, ranging from 0 to 255 inclusive.
 
 ```python
 from rgbpi import RgbPi
@@ -124,14 +124,10 @@ Video showing operation of the controller can be seen on my YouTube channel: htt
 
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=4_UW1dAGv-o" target="_blank"><img src="http://img.youtube.com/vi/4_UW1dAGv-o/0.jpg" alt="Video" width="240" height="180" border="10" /></a>
 
-## License
-
-Project is licensed under Creative Commons Attribution license (CC-BY).
-
 ## Files
 
 * *README.md* – this readme file
-* *Makefile* – file for GNU Make, used to build and load the controller firmware
+* *Makefile* – Makefile for GNU Make, used to build and load the controller firmware
 * *avrbuild/* – generic helper files for building the controller firmware
 * *doc/* – project documentation
     * *doc/ic.txt* – pin definitions for the AVR
@@ -144,10 +140,14 @@ Project is licensed under Creative Commons Attribution license (CC-BY).
     * *py/simp2c.py* – implementation of the transport layer of the communication protocol
     * *py/rgbpi.py* – implementation of the application layer of the protocol, and class to be used to implement own programs
     * *py/example1.py* – a simple example to quickly get started with RgbPi
-    * *py/example2.py* – a more sophisticated example
+    * *py/example2.py* – a bit more sophisticated example
 * *src/* – C++ sources, to be used on the controller
     * *src/main.cpp* – main entry point, basically initializes everything and enters sleep mode
     * *src/io.{h,cpp}* – input/output layer
-    * *src/simp2c_l2.{h,cpp}* – implementation of tne transport layer of the communication protocol
+    * *src/simp2c_l2.{h,cpp}* – implementation of the transport layer of the communication protocol
     * *src/simp2c_l3.{h,cpp}* – implementation of the application layer of the protocol, it also controls the timer
     * *src/timer.{h,cpp}* – implementation of PWM and default (standalone) mode, running at around 75 kHz
+
+## License
+
+Project is licensed under Creative Commons Attribution license (CC-BY). Please use the *Circuit Chaos* name and link either to [my YouTube channel](https://www.youtube.com/channel/UCfe983pckjOtoFBIJ6UMIGg), or to [my GitHub](https://github.com/CircuitChaos).
