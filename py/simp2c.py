@@ -3,7 +3,7 @@
 import RPi.GPIO as gpio
 from time import sleep
 
-class Simp2C:
+class Simp2c:
     gc = 19
     gd = 26
     us = 50.
