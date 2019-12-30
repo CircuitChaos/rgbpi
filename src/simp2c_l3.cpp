@@ -1,8 +1,8 @@
 #include <avr/interrupt.h>
 #include <avr/io.h>
-#include "simp2c.h"
+#include "simp2c_l2.h"
+#include "simp2c_l3.h"
 #include "timer.h"
-#include "simp2c_hdl.h"
 #include "io.h"
 
 struct SCtx
@@ -50,7 +50,7 @@ ISR(PCINT0_vect)
 	}
 }
 
-void simp2c_hdl_init()
+void simp2c_l3_init()
 {
 	PCMSK	= IO_PCMSK;
 	GIMSK	|= _BV(PCIE);

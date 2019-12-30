@@ -1,5 +1,5 @@
 #include <avr/io.h>
-#include "simp2c.h"
+#include "simp2c_l2.h"
 
 CSimp2c::CSimp2c(): m_last(0x03), m_sync(false)
 {
